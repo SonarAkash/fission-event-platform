@@ -83,6 +83,31 @@ const rsvpEvent = asyncHandler(async (req, res) => {
   res.json(event);
 });
 
+
+
+const leaveEvent = asyncHandler(async (req, res) => {
+  const eventId = req.params.id;
+  const userId = req.user._id;
+
+  // remove the user from the attendees array
+  const event = await Event.findByIdAndUpdate(
+    eventId,
+    {
+      $pull: { attendees: userId }
+    },
+    { new: true } 
+  );
+
+  if (!event) {
+    res.status(404);
+    throw new Error('Event not found');
+  }
+
+  res.json(event);
+});
+
+
+
 // @desc    Delete an event
 // @route   DELETE /api/events/:id
 // @access  Private (Owner only)
@@ -119,4 +144,4 @@ const deleteEvent = asyncHandler(async (req, res) => {
   res.json({ message: 'Event removed' });
 });
 
-module.exports = { createEvent, getEvents, rsvpEvent, deleteEvent };
+module.exports = { createEvent, getEvents, rsvpEvent, leaveEvent, deleteEvent };

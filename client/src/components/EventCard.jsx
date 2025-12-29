@@ -22,11 +22,16 @@ const EventCard = ({ event, refreshEvents }) => {
         if (rsvpLoading) return; // Prevent double clicks
         setRsvpLoading(true);
         try {
-            await API.post(`/events/${event._id}/rsvp`);
+            if (hasJoined) {
+                await API.post(`/events/${event._id}/leave`);
+                toast.info('You have left the event.');
+            } else {
+                await API.post(`/events/${event._id}/rsvp`);
+                toast.success('🎉 You have successfully joined!');
+            }
             refreshEvents();
-            toast.success('🎉 You have successfully joined!');
         } catch (error) {
-            toast.error(error.response?.data?.message || 'RSVP Failed');
+            toast.error(error.response?.data?.message || 'Action Failed');
         } finally {
             setRsvpLoading(false);
         }
@@ -59,7 +64,6 @@ const EventCard = ({ event, refreshEvents }) => {
                     alt={event.title}
                 />
                 <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                   
 
                     <Typography gutterBottom variant="h5" component="div">
                         {event.title}
@@ -80,17 +84,24 @@ const EventCard = ({ event, refreshEvents }) => {
                         Location: {event.location}
                     </Typography>
 
-                    
                     {user && (
-                        <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}> 
+                        <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
                             {!isOwner && (
                                 <Button
                                     variant="contained"
                                     fullWidth
-                                    disabled={isFull || hasJoined || rsvpLoading}
+                                    disabled={rsvpLoading || (!hasJoined && isFull)}
+                                    color={hasJoined ? "error" : "primary"}
                                     onClick={handleRSVP}
                                 >
-                                    {rsvpLoading ? "Joining..." : hasJoined ? "Joined" : isFull ? "Full" : "Join Event"}
+                                    {rsvpLoading
+                                        ? "Processing..."
+                                        : hasJoined
+                                            ? "Leave Event"
+                                            : isFull
+                                                ? "Full"
+                                                : "Join Event"
+                                    }
                                 </Button>
                             )}
 
@@ -108,7 +119,6 @@ const EventCard = ({ event, refreshEvents }) => {
                     )}
                 </CardContent>
             </Card>
-
 
             <Dialog
                 open={openDeleteDialog}
