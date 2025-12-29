@@ -8,7 +8,7 @@ const cloudinary = require('../config/cloudinary');
 const createEvent = asyncHandler(async (req, res) => {
   const { title, description, date, location, capacity } = req.body;
 
- 
+
   if (!req.file) {
     res.status(400);
     throw new Error('Please upload an image');
@@ -34,7 +34,7 @@ const createEvent = asyncHandler(async (req, res) => {
 const getEvents = asyncHandler(async (req, res) => {
   // Sort by date (newest first) and populate organizer name
   const events = await Event.find({})
-    .sort({ date: 1 }) 
+    .sort({ date: 1 })
     .populate('organizer', 'name email');
 
   res.json(events);
@@ -49,14 +49,14 @@ const rsvpEvent = asyncHandler(async (req, res) => {
   const eventId = req.params.id;
   const userId = req.user._id;
 
-   // Fetch event and validate existence
+  // Fetch event and validate existence
   const existingEvent = await Event.findById(eventId);
   if (!existingEvent) {
     res.status(404);
     throw new Error('Event not found');
   }
-  
-   // Prevent duplicate RSVPs
+
+  // Prevent duplicate RSVPs
   if (existingEvent.attendees.includes(userId)) {
     res.status(400);
     throw new Error('You have already RSVPd for this event');
@@ -69,9 +69,9 @@ const rsvpEvent = asyncHandler(async (req, res) => {
       $expr: { $lt: [{ $size: "$attendees" }, "$capacity"] } // Only match if not full
     },
     {
-      $push: { attendees: userId } 
+      $push: { attendees: userId }
     },
-    { new: true } 
+    { new: true }
   );
 
   // If no document is returned, the event is already full

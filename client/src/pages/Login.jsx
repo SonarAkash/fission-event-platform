@@ -18,7 +18,7 @@ const Login = () => {
             navigate('/');
         } catch (err) {
             const msg = err.response?.data?.message || 'Login failed';
-            setError(msg); 
+            setError(msg);
             toast.error(msg);
         }
     };

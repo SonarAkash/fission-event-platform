@@ -15,7 +15,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Container sx={{ marginTop: 4 }}>
         <Routes>
-          <Route path="/" element={<Dashboard />} /> 
+          <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
