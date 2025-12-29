@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createEvent, getEvents, rsvpEvent, leaveEvent, deleteEvent } = require('../controllers/eventController');
+const { createEvent, getEvents, rsvpEvent, leaveEvent, updateEvent, deleteEvent } = require('../controllers/eventController');
 const { protect } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -20,5 +20,8 @@ router.post('/:id/leave', protect, leaveEvent);
 
 // Private: Delete (Owner only)
 router.delete('/:id', protect, deleteEvent);
+
+// Private
+router.put('/:id', protect, upload.single('image'), updateEvent);
 
 module.exports = router;

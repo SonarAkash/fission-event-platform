@@ -1,15 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, TextField, Button, Box, Typography } from '@mui/material';
 import { toast } from 'react-toastify';
 import API from '../api/axios';
 
-const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
+const CreateEventModal = ({ open, handleClose, refreshEvents, eventToEdit = null }) => {
     const [formData, setFormData] = useState({
         title: '', description: '', date: '', location: '', capacity: ''
     });
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (eventToEdit) {
+            setFormData({
+                title: eventToEdit.title,
+                description: eventToEdit.description,
+                // Format date to YYYY-MM-DD for input
+                date: new Date(eventToEdit.date).toISOString().split('T')[0],
+                location: eventToEdit.location,
+                capacity: eventToEdit.capacity
+            });
+        } else {
+            setFormData({ title: '', description: '', date: '', location: '', capacity: '' });
+            setFile(null);
+        }
+    }, [eventToEdit, open]);
 
     const getTodayDate = () => {
         return new Date().toISOString().split('T')[0];
@@ -28,14 +43,12 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-
         if (formData.capacity <= 0) {
             toast.warn("Capacity must be at least 1");
             return;
         }
 
-
-        if (!file) {
+        if (!eventToEdit && !file) {
             toast.error("Please upload an image for the event!");
             return;
         }
@@ -48,21 +61,33 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
         data.append('date', formData.date);
         data.append('location', formData.location);
         data.append('capacity', formData.capacity);
-        data.append('image', file);
+        if (file) {
+            data.append('image', file);
+        }
 
         try {
-            await API.post('/events', data, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            if (eventToEdit) {
+                await API.put(`/events/${eventToEdit._id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                toast.success('Event updated successfully!');
+            } else {
+                await API.post('/events', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                toast.success('Event created successfully!');
+            }
+            
             refreshEvents();
-            toast.success('Event created successfully!');
             handleClose();
-
-            setFormData({ title: '', description: '', date: '', location: '', capacity: '' });
-            setFile(null);
+            
+            if (!eventToEdit) {
+                setFormData({ title: '', description: '', date: '', location: '', capacity: '' });
+                setFile(null);
+            }
         } catch (error) {
             console.error(error);
-            toast.error(error.response?.data?.message || 'Error creating event');
+            toast.error(error.response?.data?.message || 'Error saving event');
         } finally {
             setLoading(false);
         }
@@ -70,12 +95,11 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
 
     return (
         <Dialog open={open} onClose={!loading ? handleClose : null}>
-            <DialogTitle>Create New Event</DialogTitle>
+            <DialogTitle>{eventToEdit ? 'Edit Event' : 'Create New Event'}</DialogTitle>
             <DialogContent>
                 <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
                     <TextField name="title" label="Title" fullWidth margin="dense" required onChange={handleChange} value={formData.title} />
                     <TextField name="description" label="Description" fullWidth margin="dense" multiline rows={3} required onChange={handleChange} value={formData.description} />
-
 
                     <TextField
                         name="date"
@@ -102,7 +126,6 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
                         inputProps={{ min: 1 }}
                     />
 
-
                     <Button
                         variant="contained"
                         component="label"
@@ -110,7 +133,7 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
                         sx={{ mt: 2 }}
                         disabled={loading}
                     >
-                        {file ? "Change Image" : "Upload Image"}
+                        {file ? "Change Image" : (eventToEdit ? "Change Image (Optional)" : "Upload Image")}
                         <input
                             type="file"
                             hidden
@@ -133,7 +156,7 @@ const CreateEventModal = ({ open, handleClose, refreshEvents }) => {
                         sx={{ mt: 3 }}
                         disabled={loading}
                     >
-                        {loading ? 'Creating Event...' : 'Create Event'}
+                        {loading ? 'Processing...' : (eventToEdit ? 'Update Event' : 'Create Event')}
                     </Button>
                 </Box>
             </DialogContent>

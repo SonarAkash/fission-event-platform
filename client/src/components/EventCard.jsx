@@ -6,11 +6,13 @@ import {
 import { toast } from 'react-toastify';
 import AuthContext from '../context/AuthContext';
 import API from '../api/axios';
+import CreateEventModal from './CreateEventModal'; 
 
 const EventCard = ({ event, refreshEvents }) => {
     const { user } = useContext(AuthContext);
 
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [openEditModal, setOpenEditModal] = useState(false); 
     const [isDeleting, setIsDeleting] = useState(false);
     const [rsvpLoading, setRsvpLoading] = useState(false);
 
@@ -19,7 +21,7 @@ const EventCard = ({ event, refreshEvents }) => {
     const isOwner = event.organizer._id === user?._id;
 
     const handleRSVP = async () => {
-        if (rsvpLoading) return; // Prevent double clicks
+        if (rsvpLoading) return;
         setRsvpLoading(true);
         try {
             if (hasJoined) {
@@ -106,19 +108,39 @@ const EventCard = ({ event, refreshEvents }) => {
                             )}
 
                             {isOwner && (
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    fullWidth
-                                    onClick={handleDeleteClick}
-                                >
-                                    Delete
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        fullWidth
+                                        onClick={() => setOpenEditModal(true)}
+                                    >
+                                        Edit
+                                    </Button>
+
+
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        fullWidth
+                                        onClick={handleDeleteClick}
+                                    >
+                                        Delete
+                                    </Button>
+                                </>
                             )}
                         </Box>
                     )}
                 </CardContent>
             </Card>
+
+            <CreateEventModal
+                open={openEditModal}
+                handleClose={() => setOpenEditModal(false)}
+                refreshEvents={refreshEvents}
+                eventToEdit={event}
+            />
+
 
             <Dialog
                 open={openDeleteDialog}

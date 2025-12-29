@@ -49,14 +49,12 @@ const rsvpEvent = asyncHandler(async (req, res) => {
   const eventId = req.params.id;
   const userId = req.user._id;
 
-  // Fetch event and validate existence
   const existingEvent = await Event.findById(eventId);
   if (!existingEvent) {
     res.status(404);
     throw new Error('Event not found');
   }
 
-  // Prevent duplicate RSVPs
   if (existingEvent.attendees.includes(userId)) {
     res.status(400);
     throw new Error('You have already RSVPd for this event');
@@ -66,7 +64,7 @@ const rsvpEvent = asyncHandler(async (req, res) => {
   const event = await Event.findOneAndUpdate(
     {
       _id: eventId,
-      $expr: { $lt: [{ $size: "$attendees" }, "$capacity"] } // Only match if not full
+      $expr: { $lt: [{ $size: "$attendees" }, "$capacity"] }
     },
     {
       $push: { attendees: userId }
@@ -74,7 +72,6 @@ const rsvpEvent = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  // If no document is returned, the event is already full
   if (!event) {
     res.status(400);
     throw new Error('Event is fully booked');
@@ -104,6 +101,51 @@ const leaveEvent = asyncHandler(async (req, res) => {
   }
 
   res.json(event);
+});
+
+
+
+// @desc    Update an event
+// @route   PUT /api/events/:id
+// @access  Private (Owner only)
+const updateEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id);
+
+  if (!event) {
+    res.status(404);
+    throw new Error('Event not found');
+  }
+
+  if (event.organizer.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to update this event');
+  }
+
+  let imageUrl = event.imageUrl;
+  if (req.file) {
+    try {
+      if (event.imageUrl) {
+        const parts = event.imageUrl.split('/');
+        const filename = parts[parts.length - 1].split('.')[0];
+        const folder = parts[parts.length - 2];
+        const publicId = `${folder}/${filename}`;
+        await cloudinary.uploader.destroy(publicId);
+      }
+      imageUrl = req.file.path;
+    } catch (error) {
+      console.error("Cloudinary Update Error:", error);
+    }
+  }
+
+  event.title = req.body.title || event.title;
+  event.description = req.body.description || event.description;
+  event.date = req.body.date || event.date;
+  event.location = req.body.location || event.location;
+  event.capacity = req.body.capacity || event.capacity;
+  event.imageUrl = imageUrl;
+
+  const updatedEvent = await event.save();
+  res.json(updatedEvent);
 });
 
 
@@ -144,4 +186,4 @@ const deleteEvent = asyncHandler(async (req, res) => {
   res.json({ message: 'Event removed' });
 });
 
-module.exports = { createEvent, getEvents, rsvpEvent, leaveEvent, deleteEvent };
+module.exports = { createEvent, getEvents, rsvpEvent, leaveEvent, updateEvent, deleteEvent };
