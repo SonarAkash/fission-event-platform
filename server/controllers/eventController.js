@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Event = require('../models/Event');
+const cloudinary = require('../config/cloudinary');
 
 // @desc    Create a new event
 // @route   POST /api/events
@@ -7,7 +8,7 @@ const Event = require('../models/Event');
 const createEvent = asyncHandler(async (req, res) => {
   const { title, description, date, location, capacity } = req.body;
 
-  // Check if file was uploaded
+ 
   if (!req.file) {
     res.status(400);
     throw new Error('Please upload an image');
@@ -97,6 +98,21 @@ const deleteEvent = asyncHandler(async (req, res) => {
   if (event.organizer.toString() !== req.user._id.toString()) {
     res.status(401);
     throw new Error('Not authorized to delete this event');
+  }
+
+  if (event.imageUrl) {
+    try {
+      // Extract public_id from URL
+      // Example URL: .../upload/v1234/fission-events/xyz123.jpg
+      const parts = event.imageUrl.split('/');
+      const filename = parts[parts.length - 1].split('.')[0]; // xyz123
+      const folder = parts[parts.length - 2]; // fission-events
+      const publicId = `${folder}/${filename}`;
+
+      await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+      console.error("Cloudinary Delete Error:", error);
+    }
   }
 
   await event.deleteOne();

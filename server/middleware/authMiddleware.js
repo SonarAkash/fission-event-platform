@@ -10,16 +10,13 @@ const protect = asyncHandler(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     try {
-      // Get token from header (Format: "Bearer <token>")
       token = req.headers.authorization.split(' ')[1];
 
-      // Decode token to get User ID
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Find user in DB and attach to request object (exclude password)
       req.user = await User.findById(decoded.id).select('-password');
 
-      next(); // Move to the next function (the controller)
+      next(); 
     } catch (error) {
       console.error(error);
       res.status(401);
