@@ -58,7 +58,9 @@ const EventCard = ({ event, refreshEvents }) => {
                     image={event.imageUrl}
                     alt={event.title}
                 />
-                <CardContent sx={{ flexGrow: 1 }}>
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                   
+
                     <Typography gutterBottom variant="h5" component="div">
                         {event.title}
                     </Typography>
@@ -78,8 +80,9 @@ const EventCard = ({ event, refreshEvents }) => {
                         Location: {event.location}
                     </Typography>
 
+                    
                     {user && (
-                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                        <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}> 
                             {!isOwner && (
                                 <Button
                                     variant="contained"
